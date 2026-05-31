@@ -1,0 +1,23 @@
+# Rust / Maturin build output
+target/
+*.so
+*.pyd
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/
+dist/
+
+# Benchmark generated data (too large to commit)
+benchmarks/sample_docs/
+
+# Qdrant local storage
+qdrant_storage/
+
+# Environment
+.env
+.localagent/*
+.claude/*

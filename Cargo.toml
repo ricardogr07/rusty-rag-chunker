@@ -1,0 +1,13 @@
+[package]
+name = "rusty-rag-chunker"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rusty_rag_chunker"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }
+tiktoken-rs = "0.5"
+rayon = "1.8"

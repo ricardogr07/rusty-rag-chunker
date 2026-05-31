@@ -1,0 +1,28 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "rusty-rag-chunker"
+version = "0.1.0"
+requires-python = ">=3.9"
+description = "Token-aware text chunking in Rust, exposed to Python via PyO3"
+
+[project.optional-dependencies]
+rag = [
+    "sentence-transformers",
+    "qdrant-client",
+    "openai",
+    "python-dotenv",
+    "typer",
+]
+benchmark = [
+    "tiktoken",
+]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "python"]
+markers = ["e2e: end-to-end tests requiring Docker Qdrant"]
