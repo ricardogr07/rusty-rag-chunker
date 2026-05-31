@@ -1,0 +1,63 @@
+Rust Chunking Layer
+
+This project uses Rust to implement the performance-critical text chunking layer. The chunking
+logic is compiled to a native Python extension via PyO3 and the Maturin build system, which
+means Python code can call Rust functions directly without any subprocess overhead.
+
+Why Rust for Chunking
+
+Text chunking for retrieval-augmented generation requires precise token counting. A chunk that
+exceeds the embedding model's context window silently truncates, degrading retrieval quality.
+Rust handles this correctly and fast. The tiktoken-rs crate provides BPE tokenization compatible
+with OpenAI's cl100k_base encoding, the same tokenizer used by GPT-4 and text-embedding models.
+
+The Chunking API
+
+The Rust library exposes three public functions to Python:
+
+chunk_text(text, max_tokens, overlap_tokens, encoding) takes a single string, splits it into
+overlapping token windows, and returns a list of chunk dictionaries. Each dictionary contains
+the chunk index, the decoded text, and the exact token count. No chunk ever exceeds max_tokens.
+
+chunk_documents(docs, max_tokens, overlap_tokens, encoding) accepts a batch of document
+dictionaries. Each document provides a document_id, source_path, and text. The function
+processes all documents sequentially and attaches the document metadata to every output chunk.
+Batching reduces Python-to-Rust boundary crossings compared to calling chunk_text in a loop.
+
+chunk_documents_parallel(docs, max_tokens, overlap_tokens, encoding) is the parallel variant.
+It uses the Rayon data-parallelism library to split work across all available CPU cores. The
+Python GIL is released for the duration of Rust processing with py.allow_threads(), so other
+Python threads are not blocked. On large corpora, this variant is significantly faster than
+sequential batch processing.
+
+Token Overlap
+
+All three chunking functions support an overlap_tokens parameter. Overlapping chunks ensure
+that a sentence spanning a chunk boundary appears in at least one complete chunk, which
+prevents the loss of context at boundaries. A typical configuration is max_tokens=800 with
+overlap_tokens=100, producing a sliding window that steps 700 tokens forward between chunks.
+
+Implementation Details
+
+The core algorithm in Rust:
+1. Validates max_tokens > 0 and 0 <= overlap_tokens < max_tokens.
+2. Encodes the input text to a token list using tiktoken-rs.
+3. Iterates with a sliding window of size max_tokens, stepping by max_tokens - overlap_tokens.
+4. Decodes each token slice back to a UTF-8 string.
+5. Returns a Vec of chunk objects that PyO3 converts to Python dicts.
+
+The hard guarantee is that every chunk's token_count is at most max_tokens. This guarantee is
+enforced by construction: each window slice is at most max_tokens tokens long.
+
+Supported Encodings
+
+The encoding parameter accepts cl100k_base (default, GPT-4 compatible), p50k_base (Codex),
+and r50k_base (GPT-2). The cl100k_base encoding is recommended for all modern OpenAI embedding
+and chat models.
+
+Build System
+
+Maturin compiles the Rust crate and produces a .pyd (Windows) or .so (Linux/macOS) extension
+that can be imported as rusty_rag_chunker. Running maturin develop inside the virtual
+environment installs the extension in development mode, so edits to the Rust source take
+effect after a rebuild.

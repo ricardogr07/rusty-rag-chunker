@@ -1,0 +1,74 @@
+Python Orchestration Layer
+
+The Python side of this project handles everything outside of text chunking: loading documents,
+generating embeddings, storing vectors in Qdrant, and exposing a command-line interface. The
+Rust extension is called by Python at the chunking step, and Python resumes control for all
+subsequent pipeline stages.
+
+Module Layout
+
+The rusty_rag package lives under python/rusty_rag/ and contains the following modules:
+
+config.py defines AppConfig, a dataclass that centralizes all runtime settings. Default values
+can be overridden with environment variables: QDRANT_HOST and QDRANT_PORT control the vector
+store connection. If the OPENAI_API_KEY environment variable is set, AppConfig automatically
+switches the embedding model from the local sentence-transformers model to OpenAI's
+text-embedding-3-small and adjusts the expected vector dimension from 384 to 1536.
+
+documents.py provides load_documents(directory), which recursively finds all .txt and .md
+files in the given directory, reads their contents, and returns a list of document dictionaries
+with document_id (the filename stem), source_path (the full path), and text fields.
+
+embeddings.py provides embed_texts(texts, config). When using the local path, it loads the
+sentence-transformers/all-MiniLM-L6-v2 model via the sentence-transformers library and encodes
+all texts in a single batch call. The model is downloaded on first use and cached by
+sentence-transformers. When the OpenAI path is active, it calls the openai.embeddings.create
+API with the configured model name.
+
+vector_store.py wraps the Qdrant client. create_collection initialises a cosine-distance
+collection with the correct vector dimension; it is idempotent and safe to call repeatedly.
+upsert_chunks writes chunks and their vectors to Qdrant using deterministic UUIDs derived from
+the document_id and chunk_index, so re-ingesting the same document overwrites existing points
+rather than creating duplicates. search returns the top-k scored points for a query vector.
+
+ingest.py wires the full ingestion pipeline: load_documents, chunk_documents (Rust), embed_texts,
+upsert_chunks. The function ingest_documents(directory, config, client) returns the count of
+upserted chunks.
+
+retrieve.py provides retrieve(client, query_vector, config), which calls search and unpacks
+the Qdrant ScoredPoint objects into plain Python dicts with an additional score field.
+
+prompt.py provides build_context_prompt(question, chunks) to assemble the retrieval-augmented
+prompt, and ask_llm(prompt, config) to call the OpenAI chat completions API.
+
+cli.py exposes four Typer commands: init-db creates the Qdrant collection, ingest loads and
+indexes a directory, search performs semantic search without an LLM, and ask runs the full
+retrieval-augmented generation pipeline.
+
+Vector Store: Qdrant
+
+Qdrant is the vector database used for storing and querying embeddings. For local development,
+a Qdrant instance is started with Docker Compose on ports 6333 (HTTP/REST) and 6334 (gRPC).
+For automated tests, QdrantClient(":memory:") creates an in-process instance that requires no
+Docker and is discarded at the end of the test session.
+
+Each stored point carries a payload with five fields: document_id, source_path, chunk_index,
+text, and token_count. Retrieval results include all five payload fields plus the cosine
+similarity score assigned by Qdrant.
+
+Embedding Models
+
+The default embedding model is sentence-transformers/all-MiniLM-L6-v2, a lightweight model
+that produces 384-dimensional vectors. It runs entirely on the local machine without an API
+key. The model is approximately 90 MB and is cached by the sentence-transformers library after
+the first download.
+
+The optional OpenAI path uses text-embedding-3-small, which produces 1536-dimensional vectors
+and requires a valid OPENAI_API_KEY. Because the vector dimension changes, a collection
+initialised with the local model is incompatible with one initialised with the OpenAI model.
+
+Dependencies
+
+The Python orchestration layer requires sentence-transformers, qdrant-client, openai,
+python-dotenv, and typer. These are declared as optional dependencies under the rag extra in
+pyproject.toml and are installed with: pip install "rusty-rag-chunker[rag]".
