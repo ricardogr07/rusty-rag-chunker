@@ -133,6 +133,87 @@ call to `chunk_documents_parallel` rather than calling `chunk_text` per document
 Setting `OPENAI_API_KEY` causes `AppConfig` to switch models automatically. A collection
 created with one model is incompatible with the other (different vector dimensions).
 
+## Real Corpus Demo
+
+Ingests ~30 Wikipedia articles (ML, Rust, Python, NLP, vector search topics) into Qdrant
+using OpenAI embeddings, then answers 7 pre-built questions via gpt-4o-mini.
+
+**Prerequisites:** Docker Qdrant running + `OPENAI_API_KEY` in `.env`.
+
+```bash
+docker compose up -d
+pip install ".[rag,corpus]"
+python scripts/fetch_corpus.py         # download ~30 Wikipedia articles to data/corpus/
+python scripts/demo.py                 # ingest on first run, then Q&A
+```
+
+The corpus articles are committed in `data/corpus/` — `fetch_corpus.py` is only needed
+if you want to re-download or extend the corpus.
+
+### Sample Output
+
+```
+Collection : rusty_rag_corpus
+Embedding  : text-embedding-3-small (1536d)
+Qdrant     : localhost:6333
+
+Ingesting /mnt/c/git/rusty-rag-chunker/data/corpus into 'rusty_rag_corpus'...
+Ingested 235 chunks.
+
+======================================================================
+Q1: What is retrieval-augmented generation and how does it work?
+
+Sources: large_language_model.txt, retrieval_augmented_generation.txt, information_retrieval.txt
+
+Answer:
+Retrieval-augmented generation (RAG) is a technique that enhances large language models
+(LLMs) by enabling them to retrieve and incorporate external information into their
+responses, allowing access to up-to-date and domain-specific data beyond training.
+
+When a user submits a query, a document retriever finds the most relevant documents from
+a vector database by comparing embeddings. Those documents are combined with the original
+query to augment the prompt, and the LLM generates an answer grounded in the retrieved
+context rather than relying solely on its parametric memory.
+
+The key benefit is reduced hallucination and improved accuracy on queries that require
+current or specialized information, without the cost of retraining the model.
+
+======================================================================
+Q3: What makes Rust's memory safety model different from garbage collection?
+
+Sources: memory_safety.txt, rust_programming_language.txt
+
+Answer:
+Rust enforces memory safety at compile time through ownership rules and a borrow checker,
+rather than at runtime via a garbage collector. Key differences:
+
+- No runtime overhead: no GC pauses, making Rust suitable for performance-critical code.
+- RAII: resources are released deterministically when they go out of scope.
+- Compile-time lifetime checks: the compiler ensures no dangling references or
+  use-after-free errors reach runtime.
+- Optional reference counting (Rc/Arc) for shared ownership when needed, without making
+  it the default.
+
+Garbage-collected languages (Java, Python, Go) trade these performance guarantees for
+developer convenience; Rust achieves safety without that trade-off.
+
+======================================================================
+Q7: How does a foreign function interface allow Rust code to be called from Python?
+
+Sources: foreign_function_interface.txt, rust_programming_language.txt
+
+Answer:
+An FFI bridges Rust and Python by compiling Rust code into a shared library (.so / .dll)
+that Python can load at runtime. The Rust function must use the C calling convention
+(extern "C", #[no_mangle]) so the symbol is stable and discoverable. Python then calls
+it via ctypes, cffi, or a higher-level binding library.
+
+PyO3 (used in this project) takes this further: it generates the FFI glue automatically
+from annotated Rust functions (#[pyfunction], #[pymodule]), releasing developers from
+manual type mapping and memory management at the boundary. The result is a native Python
+extension (.pyd / .so) that imports and behaves like any Python module.
+```
+
 ## Running Tests
 
 ```bash

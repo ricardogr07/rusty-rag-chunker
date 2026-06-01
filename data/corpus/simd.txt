@@ -1,0 +1,120 @@
+Single instruction, multiple data
+
+Single instruction, multiple data (SIMD) is a type of parallel computing (processing) in Flynn's taxonomy. SIMD describes computers with multiple processing elements that perform the same operation on multiple data points simultaneously. SIMD can be internal (part of the hardware design) and it can be directly accessible through an instruction set architecture (ISA), but it should not be confused with an ISA.
+Such machines exploit data level parallelism, but not concurrency: there are simultaneous (parallel) computations, but each unit performs exactly the same instruction at any given moment (just with different data). A simple example is to add many pairs of numbers together, all of the SIMD units are performing an addition, but each one has different pairs of values to add. SIMD is especially applicable to common tasks such as adjusting the contrast in a digital image or adjusting the volume of digital audio. Most modern central processing unit (CPU) designs include SIMD instructions to improve the performance of multimedia use. In recent CPUs, SIMD units are tightly coupled with cache hierarchies and prefetch mechanisms, which minimize latency during large block operations. For instance, AVX-512-enabled processors can prefetch entire cache lines and apply fused multiply-add operations (FMA) in a single SIMD cycle.
+
+
+Confusion between SIMT and SIMD
+
+SIMD has three different subcategories in Flynn's 1972 Taxonomy, one of which is single instruction, multiple threads (SIMT). SIMT should not be confused with software threads or hardware threads, both of which are task time-sharing (time-slicing). SIMT is true simultaneous parallel hardware-level execution, such as in the ILLIAC IV.
+SIMD should not be confused with Vector processing, characterized by the Cray 1 and  clarified in Duncan's taxonomy. The
+difference between SIMD and vector processors is primarily the presence of a Cray-style SET VECTOR LENGTH instruction.
+
+
+History
+The first known operational use to date of SIMD within a register was the TX-2, in 1958. It was capable of 36-bit operations and two 18-bit or four 9-bit sub-word operations.
+The first commercial use of SIMD instructions was in the ILLIAC IV, which was completed in 1972.
+Vector supercomputers of the early 1970s such as the CDC Star-100 and the Texas Instruments ASC could operate on a "vector" of data with a single instruction. Vector processing was especially popularized by Cray in the 1970s and 1980s. Vector processing architectures are now considered separate from SIMD computers: Duncan's Taxonomy includes them whereas Flynn's Taxonomy does not, due to Flynn's work (1966, 1972) pre-dating the Cray-1 (1977). The complexity of Vector processors however inspired a simpler arrangement known as SIMD within a register.
+The first era of modern SIMD computers was characterized by massively parallel processing-style supercomputers such as the Thinking Machines Connection Machine CM-1 and CM-2. These computers had many limited-functionality processors that would work in parallel. For example, each of 65,536 single-bit processors in a Thinking Machines CM-2 would execute the same instruction at the same time, allowing, for instance, to logically combine 65,536 pairs of bits at a time, using a hypercube-connected network or processor-dedicated RAM to find its operands. Supercomputing moved away from the SIMD approach when inexpensive scalar multiple instruction, multiple data (MIMD) approaches based on commodity processors such as the Intel i860 XP became more powerful, and interest in SIMD waned.
+The current era of SIMD processors grew out of the desktop-computer market rather than the supercomputer market. As desktop processors became powerful enough to support real-time gaming and audio/video processing during the 1990s, demand grew for this type of computing power, and microprocessor vendors turned to SIMD to meet the demand. This resurgence also coincided with the rise of DirectX and OpenGL shader models, which heavily leveraged SIMD under the hood. The graphics APIs encouraged programmers to adopt data-parallel programming styles, indirectly accelerating SIMD adoption in desktop software. Hewlett-Packard introduced Multimedia Acceleration eXtensions (MAX) instructions into PA-RISC 1.1 desktops in 1994 to accelerate MPEG decoding. Sun Microsystems introduced SIMD integer instructions in its "VIS" instruction set extensions in 1995, in its UltraSPARC I microprocessor. MIPS followed suit with their similar MDMX system.
+The first widely deployed desktop SIMD was with Intel's MMX extensions to the x86 architecture in 1996. This sparked the introduction of the much more powerful AltiVec system in the Motorola PowerPC and IBM's POWER systems. Intel responded in 1999 by introducing the all-new SSE system. Since then, there have been several extensions to the SIMD instruction sets for both architectures. Advanced vector extensions AVX, AVX2 and AVX-512 are developed by Intel. AMD supports AVX, AVX2, and AVX-512 in their current products.
+
+
+Disadvantages
+With SIMD, an order of magnitude increase in code size is not uncommon, when compared to equivalent scalar or equivalent vector code, and an order of magnitude or greater effectiveness (work done per instruction) is achievable with Vector ISAs.
+ARM's Scalable Vector Extension takes another approach, known in Flynn's Taxonomy more commonly known today as "Predicated" (masked) SIMD. This approach is not as compact as vector processing but is still far better than non-predicated SIMD. Detailed comparative examples are given at Vector processor § Vector instruction example.
+
+
+Chronology
+
+
+Hardware
+
+
+CPUs
+Small-scale (64 or 128 bits) SIMD became popular on general-purpose CPUs in the early 1990s and continued through 1997 and later with Motion Video Instructions (MVI) for Alpha. SIMD instructions can be found, to one degree or another, on most CPUs, including IBM's AltiVec and Signal Processing Engine (SPE) for PowerPC, Hewlett-Packard's (HP) PA-RISC Multimedia Acceleration eXtensions (MAX), Intel's MMX and iwMMXt, Streaming SIMD Extensions (SSE), SSE2, SSE3 SSSE3 and SSE4.x, AMD's 3DNow!, ARC's ARC Video subsystem, SPARC's VIS and VIS2, Sun's MAJC, ARM's Neon technology, MIPS' MDMX (MaDMaX) and MIPS-3D.
+Intel's AVX-512 SIMD instructions process 512 bits of data at once.
+
+
+Coprocessors
+The IBM, Sony, Toshiba co-developed Cell processor's Synergistic Processing Element's (SPE's) instruction set is heavily SIMD based.
+Some, but not all, GPUs are SIMD-based. AMD GPUs since the TeraScale (microarchitecture) are SIMD-based, a feature that has remained in the 2020s microartectures RDNA and CDNA, with a layer of single instruction, multiple threads (SIMT) above. On the other hand, Nvidia's CUDA architectures use scalar cores with SIMT.
+Philips, now NXP, developed several SIMD processors named Xetal. The Xetal has 320 16-bit processor elements especially designed for vision tasks.
+Apple's M1 and M2 chips also incorporate SIMD units deeply integrated with their GPU and Neural Engine, using Apple-designed SIMD pipelines optimized for image filtering, convolution, and matrix multiplication. This unified memory architecture helps SIMD instructions operate on shared memory pools more efficiently. (The CPU part implements ordinary NEON).
+
+
+Software
+
+SIMD instructions are widely used to process 3D graphics, although modern graphics cards with embedded SIMD have largely taken over this task from the CPU. Some systems also include permute functions that re-pack elements inside vectors, making them especially useful for data processing and compression. They are also used in cryptography. The trend of general-purpose computing on GPUs (GPGPU) may lead to wider use of SIMD in the future. Recent compilers such as LLVM, GNU Compiler Collection (GCC), and Intel's ICC offer aggressive auto-vectoring options. Developers can often enable these with flags like -O3 or -ftree-vectorize, which guide the compiler to restructure loops for SIMD compatibility.
+Adoption of SIMD systems in personal computer software was at first slow, due to a number of problems. One was that many of the early SIMD instruction sets tended to slow overall performance of the system due to the re-use of existing floating point registers. Other systems, like MMX and 3DNow!, offered support for data types that were not interesting to a wide audience and had expensive context switching instructions to switch between using the FPU and MMX registers. Compilers also often lacked support, requiring programmers to resort to assembly language coding.
+SIMD on x86 had a slow start. The introduction of 3DNow! by AMD and SSE by Intel confused matters somewhat, but today the system seems to have settled down (after AMD adopted SSE) and newer compilers should result in more SIMD-enabled software. Intel and AMD now both provide optimized math libraries that use SIMD instructions, and open source alternatives like libSIMD, SIMDx86 and SLEEF have started to appear (see also libm).
+Apple Computer had somewhat more success, even though they entered the SIMD market later than the rest. AltiVec offered a rich system and can be programmed using increasingly sophisticated compilers from Motorola, IBM and GNU, therefore assembly language programming is rarely needed. Additionally, many of the systems that would benefit from SIMD were supplied by Apple itself, for example iTunes and QuickTime. However, in 2006, Apple computers moved to Intel x86 processors. Apple's APIs and development tools (XCode) were modified to support SSE2 and SSE3 as well as AltiVec. Apple was the dominant purchaser of PowerPC chips from IBM and Freescale Semiconductor. Even though Apple has stopped using PowerPC processors in their products, further development of AltiVec is continued in several PowerPC and Power ISA designs from Freescale and IBM.
+SIMD within a register, or SWAR, is a range of techniques and tricks used for performing SIMD in general-purpose registers on hardware that does not provide any direct support for SIMD instructions. This can be used to exploit parallelism in certain algorithms even on hardware that does not support SIMD directly.
+
+
+Programmer interface
+It is common for publishers of the SIMD instruction sets to make their own C and C++ language extensions with intrinsic functions or special datatypes (with operator overloading) guaranteeing the generation of vector code. Intel, AltiVec, and ARM NEON provide extensions widely adopted by the compilers targeting their CPUs. (More complex operations are the task of vector math libraries.)
+
+
+Generic datatypes
+The GNU C Compiler takes the extensions a step further by abstracting them into a universal interface that can be used on any platform by providing a way of defining SIMD datatypes. The LLVM Clang compiler also implements the feature, with an analogous interface defined in the IR. Rust's packed_simd crate (and the experimental std::simd) uses this interface, and so does Swift 2.0+.
+C++ has an experimental interface std::experimental::simd that works similarly to the GCC extension. LLVM's libcxx seems to implement it. For GCC and libstdc++, a wrapper library that builds on top of the GCC extension is available.
+Microsoft added SIMD to .NET in RyuJIT. The System.Numerics.Vector package, available on NuGet, implements SIMD datatypes. Java also has a new proposed API for SIMD instructions available in OpenJDK 17 in an incubator module. It also has a safe fallback mechanism on unsupported CPUs to simple loops.
+
+
+Vectorization hints
+Instead of providing an SIMD datatype, compilers can also be hinted to auto-vectorize some loops, potentially taking some assertions about the lack of data dependency. This is not as flexible as manipulating SIMD variables directly, but is easier to use. OpenMP 4.0+ has a #pragma omp simd hint. This OpenMP interface has replaced a wide set of nonstandard extensions, including Cilk's #pragma simd, GCC's #pragma GCC ivdep, and many more.
+"SIMD everywhere", a collection of C/C++ headers implementing platform-specific intrinsics for other platforms (e.g. SSE intrinsics for ARM NEON), includes the use of platform-specific intrinsics, generic vector interfaces, and vectorization hints. It can be used as a "Rosetta Stone" for comparing these different SIMD programming paradigms.
+
+
+SPMD-on-SIMD
+Another approach is SPMD: write a program that looks as if it operates only one element on the time, then have a compiler widen it to match the SIMD vector width. This is the approach used by graphics shaders and more recently adopted by CPU-oriented tools such as Intel IPSC.
+
+
+SIMD multi-versioning
+Consumer software is typically expected to work on a range of CPUs covering multiple generations, which could limit the programmer's ability to use new SIMD instructions to improve the computational performance of a program. The solution is to include multiple versions of the same code that uses either older or newer SIMD technologies, and pick one that best fits the user's CPU at run-time (dynamic dispatch). There are two main camps of solutions:
+
+Function multi-versioning (FMV): a subroutine in the program or a library is duplicated and compiled for many instruction set extensions, and the program decides which one to use at run-time.
+Library multi-versioning (LMV): the entire programming library is duplicated for many instruction set extensions, and the operating system or the program decides which one to load at run-time.
+FMV, manually coded in assembly language, is quite commonly used in a number of performance-critical libraries such as glibc and libjpeg-turbo. Intel C++ Compiler, GNU Compiler Collection since GCC 6, and Clang since clang 7 allow for a simplified approach, with the compiler taking care of function duplication and selection. GCC and clang requires explicit target_clones labels in the code to "clone" functions, while ICC does so automatically (under the command-line option /Qax). The Rust programming language also supports FMV. The setup is similar to GCC and Clang in that the code defines what instruction sets to compile for, but cloning is manually done via inlining.
+As using FMV requires code modification on GCC and Clang, vendors more commonly use library multi-versioning: this is easier to achieve as only compiler switches need to be changed. Glibc supports LMV and this functionality is adopted by the Intel-backed Clear Linux project.
+
+
+SIMD on the web
+In 2013 John McCutchan announced that he had created a high-performance interface to SIMD instruction sets for the Dart programming language, bringing the benefits of SIMD to web programs for the first time. The interface consists of two types:
+
+Float32x4, 4 single precision floating point values.
+Int32x4, 4 32-bit integer values.
+Instances of these types are immutable and in optimized code are mapped directly to SIMD registers. Operations expressed in Dart typically are compiled into a single instruction without any overhead. This is similar to C and C++ intrinsics. Benchmarks for 4×4 matrix multiplication, 3D vertex transformation, and Mandelbrot set visualization show near 400% speedup compared to scalar code written in Dart.
+Intel announced at IDF 2013 that they were implementing McCutchan's specification for both V8 and SpiderMonkey. However, by 2017, SIMD.js was taken out of the ECMAScript standard queue in favor of pursuing a similar interface in WebAssembly.
+Support for SIMD was added to the WebAssembly 2.0 specification, which was finished on 2022 and became official in December 2024. LLVM's autovectoring, when compiling C or C++ to WebAssembly, can target WebAssembly SIMD to automatically make use of SIMD, while SIMD intrinsic are also available.
+
+
+Commercial applications
+It has generally proven difficult to find sustainable commercial applications for SIMD-only processors in general-purpose computing.
+One that has had some measure of success is the GAPP, which was developed by Lockheed Martin and taken to the commercial sector by their spin-off Teranex. The GAPP's recent incarnations have become a powerful tool in real-time video processing applications like conversion between various video standards and frame rates (NTSC to/from PAL, NTSC to/from high-definition television (HDTV) formats, etc.), deinterlacing, image noise reduction, adaptive video compression, and image enhancement.
+A more ubiquitous application for SIMD is found in video games: nearly every modern video game console since 1998 has incorporated a SIMD processor somewhere in its architecture. The PlayStation 2 was unusual in that one of its vector-float units could function as an autonomous digital signal processor (DSP) executing its own instruction stream, or as a coprocessor driven by ordinary CPU instructions. 3D graphics applications tend to lend themselves well to SIMD processing as they rely heavily on operations with 4-dimensional vectors. Microsoft's Direct3D 9.0 now chooses at runtime processor-specific implementations of its own math operations, including the use of SIMD-capable instructions.
+A later processor that used vector processing is the Cell processor used in the PlayStation 3, which was developed by IBM in cooperation with Toshiba and Sony. It uses a number of SIMD processors (a non-uniform memory access (NUMA) architecture, each with independent local store and controlled by a general purpose CPU) and is geared towards the huge datasets required by 3D and video processing applications. It differs from traditional ISAs by being SIMD from the ground up with no separate scalar registers.
+Ziilabs produced an SIMD type processor for use on mobile devices, such as media players and mobile phones.
+Larger scale commercial SIMD processors are available from ClearSpeed Technology, Ltd. and Stream Processors, Inc. ClearSpeed's CSX600 (2004) has 96 cores each with two double-precision floating point units while the CSX700 (2008) has 192. Stream Processors is headed by computer architect Bill Dally. Their Storm-1 processor (2007) contains 80 SIMD cores controlled by a MIPS CPU.
+
+
+See also
+Streaming SIMD Extensions, MMX, SSE2, SSE3, Advanced Vector Extensions, AVX-512
+Instruction set architecture
+Flynn's taxonomy
+SIMD within a register (SWAR)
+Single program, multiple data (SPMD)
+OpenCL
+
+
+References
+
+
+External links
+SIMD architectures (2000)
+Cracking Open The Pentium 3 (1999)
+Short Vector Extensions in Commercial Microprocessor
+Article about Optimizing the Rendering Pipeline of Animated Models Using the Intel Streaming SIMD Extensions
+"Yeppp!": cross-platform, open-source SIMD library from Georgia Tech
+Introduction to Parallel Computing from LLNL Lawrence Livermore National Laboratory Archived 2013-06-10 at the Wayback Machine

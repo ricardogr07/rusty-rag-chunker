@@ -1,0 +1,51 @@
+Memory safety
+
+Memory safety is the state of being protected from various software bugs and security vulnerabilities when dealing with memory access, such as buffer overflows and dangling pointers. For example, Java is memory-safe because its runtime error detection checks array bounds and pointer dereferences. By contrast, programming languages like C, C++, and Fortran allow arbitrary pointer arithmetic with pointers implemented as direct memory addresses with no provision for bounds checking, making them memory-unsafe. Memory-unsafe code is typically found in low level programming, with higher level programming languages generally incorporating either garbage collection or static analysis (as in Rust) to prevent such errors.
+
+
+History
+Memory errors were first considered in the context of resource management (computing) and time-sharing systems, in an effort to avoid problems such as fork bombs. Developments were mostly theoretical until the Morris worm, which exploited a buffer overflow in fingerd. The field of computer security developed quickly thereafter, escalating with multitudes of new attacks such as the return-to-libc attack and defense techniques such as the non-executable stack and address space layout randomization. Randomization prevents most buffer overflow attacks and requires the attacker to use heap spraying or other application-dependent methods to obtain addresses, although its adoption has been slow. However, deployments of the technology are typically limited to randomizing libraries and the location of the stack.
+
+
+Impact
+In 2019, a Microsoft security engineer reported that 70% of all security vulnerabilities were caused by memory safety issues. In 2020, a team at Google similarly reported that 70% of all "severe security bugs" in Chromium were caused by memory safety problems. Many other high-profile vulnerabilities and exploits in critical software have ultimately stemmed from a lack of memory safety, including Heartbleed and a long-standing privilege escalation bug in sudo. The pervasiveness and severity of vulnerabilities and exploits arising from memory safety issues have led several security researchers to describe identifying memory safety issues as "shooting fish in a barrel".
+
+
+Approaches
+Some modern high-level programming languages are memory-safe by default, though not completely since they only check their own code and not the system they interact with. Automatic memory management in the form of garbage collection is the most common technique for preventing some of the memory safety problems, since it prevents common memory safety errors like use-after-free for all data allocated within the language runtime. When combined with automatic bounds checking on all array accesses and no support for raw pointer arithmetic, garbage collected languages provide strong memory safety guarantees (though the guarantees may be weaker for low-level operations explicitly marked unsafe, such as use of a foreign function interface). However, the performance overhead of garbage collection makes these languages unsuitable for certain performance-critical applications.
+For languages that use manual memory management, memory safety is not usually guaranteed by the runtime. Instead, memory safety properties must either be guaranteed by the compiler via static program analysis and automated theorem proving or carefully managed by the programmer at runtime. For example, the Rust programming language implements a borrow checker to ensure memory safety, while C and C++ provide no memory safety guarantees. The substantial amount of software written in C and C++ has motivated the development of external static analysis tools like Coverity, which offers static memory analysis for C.
+DieHard, its redesign DieHarder, and the Allinea Distributed Debugging Tool are special heap allocators that allocate objects in their own random virtual memory page, allowing invalid reads and writes to be stopped and debugged at the exact instruction that causes them. Protection relies upon hardware memory protection and thus overhead is typically not substantial, although it can grow significantly if the program makes heavy use of allocation. Randomization provides only probabilistic protection against memory errors, but can often be easily implemented in existing software by relinking the binary.
+The memcheck tool of Valgrind uses an instruction set simulator and runs the compiled program in a memory-checking virtual machine, providing guaranteed detection of a subset of runtime memory errors. However, it typically slows the program down by a factor of 40, and furthermore must be explicitly informed of custom memory allocators.
+With access to the source code, libraries exist that collect and track legitimate values for pointers ("metadata") and check each pointer access against the metadata for validity, such as the Boehm garbage collector. In general, memory safety can be safely assured using tracing garbage collection and the insertion of runtime checks on every memory access; this approach has overhead, but less than that of Valgrind. All garbage-collected languages take this approach. For C and C++, many tools exist that perform a compile-time transformation of the code to do memory safety checks at runtime, such as CheckPointer and AddressSanitizer which imposes an average slowdown factor of 2.
+BoundWarden is a new spatial memory enforcement approach that utilizes a combination of compile-time transformation and runtime concurrent monitoring techniques.
+Fuzz testing is well-suited for finding memory safety bugs and is often used in combination with dynamic checkers such as AddressSanitizer.
+
+
+Classification of memory safety errors
+Many different types of memory errors can occur:
+
+Spatial
+Buffer overflow – out-of-bound writes can corrupt the content of adjacent objects, or internal data (like bookkeeping information for the heap) or return addresses.
+Buffer over-read – out-of-bound reads can reveal sensitive data or help attackers bypass address space layout randomization.
+Temporal
+Use after free – dereferencing a dangling pointer storing the address of an object that has been deleted.
+Double free – repeated calls to free may prematurely free a new object at the same address. If the exact address has not been reused, other corruption may occur, especially in allocators that use free lists.
+Uninitialized variables – a variable that has not been assigned a value is used. It may contain sensitive information or bits that are not valid for the type.
+Wild pointers arise when a pointer is used prior to initialization to some known state. They show the same erratic behaviour as dangling pointers, though they are less likely to stay undetected.
+Invalid free – passing an invalid address to free can corrupt the heap.
+Mismatched free – when multiple allocators are in use, attempting to free memory with a deallocation function of a different allocator.
+Spatiotemporal
+Struct tearing or non-atomic reads may be observed when data larger than the cpu word size is read from memory.
+
+
+Contributing bugs
+Depending on the language and environment, other types of bugs can contribute to memory unsafety:
+
+Stack exhaustion – occurs when a program runs out of stack space, typically because of too deep recursion. A guard page typically halts the program, preventing memory corruption, but functions with large stack frames may bypass the page, and kernel code may not have the benefit of guard pages.
+Heap exhaustion – the program tries to allocate more memory than the amount available. In some languages, this condition must be checked for manually after each allocation.
+Memory leak – Failing to return memory to the allocator may set the stage for heap exhaustion (above). Failing to run the destructor of an RAII object may lead to unexpected results.
+Null pointer dereference – A null pointer dereference will often cause an exception or program termination in most environments, but can cause corruption in operating system kernels or systems without memory protection or when use of the null pointer involves a large or negative offset. In C++, because dereferencing a null pointer is undefined behavior, compiler optimizations may cause other checks to be removed, leading to vulnerabilities elsewhere in the code.
+Some lists may also include race conditions (concurrent reads/writes to shared memory) as being part of memory safety (e.g., for access control). The Rust programming language prevents many kinds of memory-based race conditions by default, because it ensures there is at most one writer or one or more readers. Many other programming languages, such as Java, do not automatically prevent memory-based race conditions, yet are still generally considered "memory safe" languages. Therefore, countering race conditions is generally not considered necessary for a language to be considered memory safe.
+
+
+References

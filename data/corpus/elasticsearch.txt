@@ -1,0 +1,43 @@
+Elasticsearch
+
+Elasticsearch is a source-available search engine developed by Elastic. It is based on Apache Lucene and provides a distributed, multitenant-capable full-text search engine with an HTTP web interface and schema-free JSON documents. Official clients are available in Java, C#, PHP, Python, Ruby, and other languages. According to the DB-Engines ranking, Elasticsearch is the most popular enterprise search engine.
+Elasticsearch is distributed and uses JSON documents stored in indices divided into shards, each of which may have replicas distributed across cluster nodes. It supports full-text search, faceted search, real-time search, and multitenancy. The software is developed alongside Logstash, Kibana, and Beats as part of the Elastic Stack (formerly the ELK Stack).
+
+
+History
+Shay Banon created the precursor to Elasticsearch, called Compass, in 2004. Developing a third version of Compass, he concluded that a full rewrite was necessary to build a scalable, distributed search solution using JSON over HTTP as a common interface. He released the first version of Elasticsearch in February 2010.
+Elastic NV was founded in 2012 to provide commercial services and products around Elasticsearch and related software. In June 2014, the company raised $70 million in a Series C funding round led by New Enterprise Associates, with additional funding from Benchmark Capital and Index Ventures, bringing total funding to $104 million.
+In March 2015, the company changed its name from Elasticsearch to Elastic and, through the acquisition of Found, launched a managed cloud offering later known as Elastic Cloud. In November 2017, Elastic acquired the search startup Swiftype, whose technology became the basis for Elastic App Search and Elastic Site Search. Elastic also formed partnerships with Google to offer Elastic Cloud on Google Cloud Platform and with Alibaba to offer Elasticsearch and Kibana on Alibaba Cloud.
+In June 2018, Elastic filed for an initial public offering with an estimated valuation of between $1.5 and $3 billion. On 5 October 2018, Elastic was listed on the New York Stock Exchange.
+
+
+Licensing changes
+In January 2021, Elastic announced that starting with version 7.11, Elasticsearch and Kibana would be relicensed from Apache License 2.0 to a dual license under the Server Side Public License and the Elastic License, neither of which is recognised as an open-source license. Elastic stated the change was a response to Amazon Web Services (AWS) offering Elasticsearch and Kibana as a service without what Elastic described as adequate collaboration. Critics of the change noted that Elastic had previously promised never to alter the Apache 2.0 licensing of Elasticsearch, Kibana, Beats, and Logstash, and predicted the move would damage the ecosystem.
+AWS responded by announcing a fork of the projects to continue development under Apache License 2.0. Other members of the Elasticsearch ecosystem, including Logz.io, CrateDB, and Aiven, also committed to supporting a fork. Due to potential trademark conflicts with the name "Elasticsearch", AWS rebranded their fork as OpenSearch in April 2021.
+In August 2024, Elastic added the GNU Affero General Public License as a third licensing option for Elasticsearch starting with version 8.16.0. This made the software available under a free and open-source license once again alongside the two source-available options.
+
+
+Architecture and features
+Elasticsearch is built on Apache Lucene and exposes Lucene's capabilities through a JSON and Java API. Documents are stored in indices, which are divided into primary shards; each shard may have zero or more replicas distributed across cluster nodes. Routing and rebalancing are handled automatically. Once an index has been created, the number of primary shards cannot be changed.
+The engine supports faceted search and percolation, a form of prospective search in which stored queries are matched against incoming documents rather than the reverse. A gateway module handles long-term index persistence, allowing an index to be recovered after a node failure. Real-time GET requests make Elasticsearch usable as a NoSQL datastore, though it does not support distributed transactions.
+In May 2019, Elastic made the core security features of the Elastic Stack available without charge, including TLS for encrypted communications, file and native realm authentication, and role-based access control for cluster APIs and indices. The corresponding source code is available under the Elastic License. Elasticsearch also offers SIEM and machine learning capabilities as part of its commercial offerings.
+Official client libraries are maintained for Java, C# (.NET), PHP, Python, and Ruby, among others.
+
+
+Elastic Stack
+Elasticsearch is developed alongside Logstash (a data collection and log-parsing engine), Kibana (an analytics and visualisation platform), and Beats (lightweight data shippers). The four products are designed for use together as the Elastic Stack. The combination was previously known as the ELK Stack, an initialism for "Elasticsearch, Logstash, and Kibana".
+
+
+See also
+Information extraction
+Kibana
+Grafana
+List of information retrieval libraries
+OpenSearch (software) - open-source fork of Elasticsearch maintained by AWS
+
+
+References
+
+
+External links
+Official website

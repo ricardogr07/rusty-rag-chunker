@@ -1,0 +1,56 @@
+Foreign function interface
+
+A foreign function interface (FFI) is a mechanism by which a program written in one programming language can call interoperable routines or make use of services written or compiled in another one. An FFI is often used in contexts where calls are made into a binary dynamic-link library.
+
+
+Naming
+The term comes from the specification for Common Lisp, which explicitly refers to the programming language feature enabling for inter-language calls as such; the term is also often used officially by the interpreter and compiler documentation for Haskell, Rust, PHP, Python, and LuaJIT (Lua). Other languages use other terminology: Ada has language bindings, while Java has Java Native Interface (JNI), Java Native Access (JNA), or since Java 22, Foreign Function and Memory API. Foreign function interface has become generic terminology for mechanisms which provide such services.
+
+
+Operation
+The primary function of a foreign function interface is to mate the semantics and calling conventions of one programming language (the host language, or the language which defines the FFI), with the semantics and conventions of another (the guest language). This process must also take into consideration the runtime environments and application binary interfaces of both. This can be done in several ways:
+
+Requiring that guest-language functions which are to be host-language callable be specified or implemented in a particular way, often using a compatibility library of some sort.
+Use of a tool to automatically wrap guest-language functions with appropriate glue code, which performs any necessary translation.
+Use of a wrapper library
+Restricting the set of host language abilities which can be used cross-language. For example, C++ functions called from C may not (in general) include reference parameters or throw exceptions.
+C++ offers compatibility with C trivially, however as C++ uses name mangling, symbols that are to be exported in shared libraries must be wrapped in extern "C" blocks which prevent name mangling. extern "C" functions may call C++ code internally, but may only return C types and may not throw exceptions.
+FFIs may be complicated by the following considerations:
+
+If one language supports garbage collection (GC) and the other does not; care must be taken that the non-GC language code does nothing to cause GC in the other to fail. In JNI, for example, C code which "holds on to" object references that it receives from Java must communicate this information successfully to the Java virtual machine or Java Runtime Environment (JRE), otherwise, Java may delete objects before C finishes with them. (The C code must also explicitly release its link to any such object once C has no further need of that object.)
+Complicated or non-trivial objects or datatypes may be difficult to map from one environment to another.
+It may not be possible for both languages to maintain references to the same instance of a mutable object, due to the mapping issue above.
+One or both languages may be running on a virtual machine (VM); moreover, if both are, these are often different VMs.
+Cross-language inheritance and other differences, such as between type systems or between object composition models, may be especially difficult.
+
+Many FFIs can be generated automatically: for example, SWIG. However, in the case of an extension language a semantic inversion of the relationship of guest and host can occur, when a smaller body of extension language is the guest invoking services in the larger body of host language, such as writing a small plugin for GIMP.
+Some FFIs are restricted to free standing functions, while others also allow calls of functions embedded in an object or class (often called method calls); some even permit migration of complex datatypes or objects across the language boundary.
+In most cases, an FFI is defined by a higher-level language, so that it may employ services defined and implemented in a lower-level language, typically a system programming language like C or C++. This is typically done to either access operating system (OS) services in the language in which the OS API is defined, or for performance goals.
+Many FFIs also provide the means for the called language to invoke services in the host language also.
+The term foreign function interface is generally not used to describe multi-lingual runtimes such as the Microsoft Common Language Runtime, where a common substrate is provided which enables any CLR-compliant language to use services defined in any other. (However, in this case the CLR does include an FFI, P/Invoke, to call outside the runtime.) In addition, many distributed computing architectures such as the Java remote method invocation (RMI), RPC, CORBA, SOAP and D-Bus permit different services to be written in different languages; such architectures are generally not considered FFIs.
+
+
+Special cases
+There are some special cases, in which the languages compile into the same bytecode VM, like Clojure and Java, as well as Elixir and Erlang. Since there is no interface, it is not an FFI, strictly speaking, while it offers the same functions to the user.
+
+
+See also
+Language interoperability
+Interface definition language
+Calling convention
+Name mangling
+Application programming interface
+Application binary interface
+Comparison of application virtual machines
+SWIG
+Remote procedure call
+libffi
+
+
+References
+
+
+External links
+c2.com: Foreign function interface
+Haskell 98 Foreign Function Interface
+Allegro Common Lisp FFI
