@@ -4,7 +4,9 @@ from dataclasses import dataclass, field
 
 @dataclass
 class AppConfig:
-    collection_name: str = "rusty_rag_chunks"
+    collection_name: str = field(
+        default_factory=lambda: os.getenv("QDRANT_COLLECTION", "rusty_rag_chunks")
+    )
     qdrant_host: str = field(default_factory=lambda: os.getenv("QDRANT_HOST", "localhost"))
     qdrant_port: int = field(default_factory=lambda: int(os.getenv("QDRANT_PORT", "6333")))
 

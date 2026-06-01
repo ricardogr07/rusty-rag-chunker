@@ -19,6 +19,9 @@ rag = [
 benchmark = [
     "tiktoken",
 ]
+corpus = [
+    "httpx",
+]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]

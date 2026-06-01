@@ -42,8 +42,8 @@ def upsert_chunks(
 
 
 def search(client: QdrantClient, query_vector: list[float], config: AppConfig):
-    return client.search(
+    return client.query_points(
         collection_name=config.collection_name,
-        query_vector=query_vector,
+        query=query_vector,
         limit=config.retrieval_top_k,
-    )
+    ).points
