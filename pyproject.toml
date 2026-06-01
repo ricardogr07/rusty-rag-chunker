@@ -27,5 +27,5 @@ corpus = [
 features = ["pyo3/extension-module"]
 
 [tool.pytest.ini_options]
-pythonpath = [".", "python"]
+pythonpath = ["."]
 markers = ["e2e: end-to-end tests requiring Docker Qdrant"]
