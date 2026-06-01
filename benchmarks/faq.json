@@ -1,0 +1,93 @@
+[
+  {
+    "id": "proj-01",
+    "category": "project-specific",
+    "question": "What problem does Rust solve in this project?",
+    "expected": "answer",
+    "note": "Core project motivation — explicitly covered in project_overview.md"
+  },
+  {
+    "id": "proj-02",
+    "category": "project-specific",
+    "question": "Explain how Rust is used with Python in this project.",
+    "expected": "answer",
+    "note": "PyO3/Maturin FFI — covered in project_overview.md"
+  },
+  {
+    "id": "proj-03",
+    "category": "project-specific",
+    "question": "What are the five functions exposed by the Rust extension?",
+    "expected": "answer",
+    "note": "hello, count_tokens, chunk_text, chunk_documents, chunk_documents_parallel"
+  },
+  {
+    "id": "proj-04",
+    "category": "project-specific",
+    "question": "What is the throughput improvement of the parallel Rust chunker over Python tiktoken on a 50 MB dataset?",
+    "expected": "answer",
+    "note": "Benchmark: 2.00 MB/s vs 1.43 MB/s, ~40% improvement"
+  },
+  {
+    "id": "proj-05",
+    "category": "project-specific",
+    "question": "How does the hallucination guard work in the ask command?",
+    "expected": "answer",
+    "note": "Two layers: score threshold + system prompt"
+  },
+  {
+    "id": "proj-06",
+    "category": "project-specific",
+    "question": "Which environment variable sets the minimum retrieval score?",
+    "expected": "answer",
+    "note": "RETRIEVAL_MIN_SCORE — listed in project_overview.md"
+  },
+  {
+    "id": "proj-07",
+    "category": "project-specific",
+    "question": "What CLI commands does rusty_rag expose?",
+    "expected": "answer",
+    "note": "init-db, ingest, search, ask"
+  },
+  {
+    "id": "corpus-01",
+    "category": "wikipedia-corpus",
+    "question": "What is retrieval-augmented generation?",
+    "expected": "answer",
+    "note": "RAG article is in the corpus"
+  },
+  {
+    "id": "corpus-02",
+    "category": "wikipedia-corpus",
+    "question": "What is a vector database used for?",
+    "expected": "answer",
+    "note": "Vector database article is in the corpus"
+  },
+  {
+    "id": "corpus-03",
+    "category": "wikipedia-corpus",
+    "question": "What is the transformer architecture in machine learning?",
+    "expected": "answer",
+    "note": "Transformer article is in the corpus"
+  },
+  {
+    "id": "oos-01",
+    "category": "out-of-scope",
+    "question": "What is the best recipe for making paella?",
+    "expected": "blocked",
+    "note": "Food — should be blocked by score threshold"
+  },
+  {
+    "id": "oos-02",
+    "category": "out-of-scope",
+    "question": "Who won the FIFA World Cup in 2022?",
+    "expected": "blocked",
+    "note": "Sports trivia not in corpus"
+  },
+  {
+    "id": "oos-03",
+    "category": "out-of-scope",
+    "question": "What is the capital of Madagascar?",
+    "expected": "blocked",
+    "note": "Geography not in corpus"
+  }
+]
