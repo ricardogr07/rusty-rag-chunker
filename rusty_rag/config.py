@@ -16,7 +16,8 @@ class AppConfig:
     chunk_max_tokens: int = 800
     chunk_overlap_tokens: int = 100
     tokenizer_encoding: str = "cl100k_base"
-    retrieval_top_k: int = 5
+    retrieval_top_k: int = 10
+    llm_model: str = "gpt-4o-mini"
     retrieval_min_score: float = field(
         default_factory=lambda: float(os.getenv("RETRIEVAL_MIN_SCORE", "0.50"))
     )

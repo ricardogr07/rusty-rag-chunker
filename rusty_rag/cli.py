@@ -1,6 +1,7 @@
 """Typer CLI for the rusty-rag pipeline."""
 
 import os
+from typing import Optional
 
 import typer
 from dotenv import load_dotenv
@@ -30,38 +31,32 @@ def init_db() -> None:
 @app.command()
 def ingest(directory: str = typer.Argument("data/raw")) -> None:
     """Ingest all .txt/.md documents in DIRECTORY into Qdrant."""
-    from rusty_rag_chunker import chunk_documents as _chunk
-
     from rusty_rag.config import AppConfig
-    from rusty_rag.documents import load_documents
-    from rusty_rag.embeddings import embed_texts
-    from rusty_rag.vector_store import create_collection, upsert_chunks
+    from rusty_rag.ingest import ingest_documents
+    from rusty_rag.vector_store import create_collection
 
     config = AppConfig()
     client = _client(config.qdrant_host, config.qdrant_port)
     create_collection(client, config)
 
-    docs = load_documents(directory)
-    chunks = _chunk(docs, config.chunk_max_tokens, config.chunk_overlap_tokens, config.tokenizer_encoding)
-    vectors = embed_texts([c["text"] for c in chunks], config)
-    upsert_chunks(client, chunks, vectors, config)
-
-    typer.echo(f"Documents read:   {len(docs)}")
-    typer.echo(f"Chunks created:   {len(chunks)}")
-    typer.echo(f"Chunks embedded:  {len(vectors)}")
-    typer.echo(f"Points upserted:  {len(chunks)}")
-    typer.echo(f"Collection:       {config.collection_name}")
+    n = ingest_documents(directory, config, client)
+    typer.echo(f"Chunks ingested: {n}")
+    typer.echo(f"Collection:      {config.collection_name}")
 
 
 @app.command()
-def search(query: str, top_k: int = typer.Option(5, help="Number of results")) -> None:
+def search(
+    query: str,
+    top_k: Optional[int] = typer.Option(None, help="Number of results (default: from config)"),
+) -> None:
     """Semantic search (no LLM required)."""
     from rusty_rag.config import AppConfig
     from rusty_rag.embeddings import embed_texts
     from rusty_rag.retrieve import retrieve
 
     config = AppConfig()
-    config.retrieval_top_k = top_k
+    if top_k is not None:
+        config.retrieval_top_k = top_k
     client = _client(config.qdrant_host, config.qdrant_port)
 
     query_vector = embed_texts([query], config)[0]
@@ -77,7 +72,10 @@ def search(query: str, top_k: int = typer.Option(5, help="Number of results")) -
 
 
 @app.command()
-def ask(question: str, top_k: int = typer.Option(5, help="Number of chunks to retrieve")) -> None:
+def ask(
+    question: str,
+    top_k: Optional[int] = typer.Option(None, help="Number of chunks to retrieve (default: from config)"),
+) -> None:
     """Full RAG answer (requires OPENAI_API_KEY)."""
     if not os.getenv("OPENAI_API_KEY"):
         typer.echo(
@@ -92,7 +90,8 @@ def ask(question: str, top_k: int = typer.Option(5, help="Number of chunks to re
     from rusty_rag.retrieve import retrieve
 
     config = AppConfig()
-    config.retrieval_top_k = top_k
+    if top_k is not None:
+        config.retrieval_top_k = top_k
     client = _client(config.qdrant_host, config.qdrant_port)
 
     query_vector = embed_texts([question], config)[0]

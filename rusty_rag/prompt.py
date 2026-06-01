@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -14,6 +15,12 @@ _SYSTEM_PROMPT = (
 )
 
 
+@functools.lru_cache(maxsize=1)
+def _get_openai_client():
+    import openai
+    return openai.OpenAI()
+
+
 def build_context_prompt(question: str, chunks: list[dict]) -> str:
     context = "\n\n".join(
         f"[{i + 1}] ({c['source_path']})\n{c['text']}"
@@ -23,9 +30,8 @@ def build_context_prompt(question: str, chunks: list[dict]) -> str:
 
 
 def ask_llm(prompt: str, config: AppConfig) -> str:
-    import openai
-    response = openai.OpenAI().chat.completions.create(
-        model="gpt-4o-mini",
+    response = _get_openai_client().chat.completions.create(
+        model=config.llm_model,
         messages=[
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user", "content": prompt},

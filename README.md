@@ -11,9 +11,8 @@ boundary and degrades retrieval quality. This library chunks text by actual BPE 
 using tiktoken-rs (the same tokenizer as GPT-4), with an overlap window to preserve context
 at chunk boundaries.
 
-The Rust extension exposes three functions: `chunk_text` for a single document, `chunk_documents`
-for sequential batch processing, and `chunk_documents_parallel` for Rayon-parallelised batches.
-Each returned chunk carries its exact token count. No chunk ever exceeds `max_tokens`.
+Every chunk is guaranteed to never exceed `max_tokens`. The default encoding is `cl100k_base`,
+which matches both GPT-4 and `text-embedding-3-small`.
 
 ## Architecture
 
@@ -24,12 +23,13 @@ Python (orchestration)
   ├── rusty_rag/embeddings.py    sentence-transformers (local) or OpenAI opt-in
   ├── rusty_rag/vector_store.py  Qdrant create / upsert / search
   ├── rusty_rag/ingest.py        load → chunk → embed → upsert
-  ├── rusty_rag/retrieve.py      embed query → search → return dicts
+  ├── rusty_rag/retrieve.py      embed query → search → return dicts with scores
   ├── rusty_rag/prompt.py        context prompt builder + LLM call
   └── rusty_rag/cli.py           init-db / ingest / search / ask (Typer)
 
 Rust (chunking, via PyO3 + Maturin)
-  └── src/lib.rs                 chunk_text, chunk_documents, chunk_documents_parallel
+  └── src/lib.rs                 hello, count_tokens, chunk_text,
+                                 chunk_documents, chunk_documents_parallel
 ```
 
 ## Quick Start
@@ -56,9 +56,11 @@ python -m rusty_rag.cli ingest data/raw
 # Search (no API key needed — uses local sentence-transformers)
 python -m rusty_rag.cli search "What language handles chunking?"
 
-# Full RAG answer (requires OPENAI_API_KEY)
+# Full RAG answer (requires OPENAI_API_KEY in .env)
 python -m rusty_rag.cli ask "What problem does Rust solve in this project?"
 ```
+
+Copy `.env.example` to `.env` and fill in your OpenAI key before using `ask`.
 
 ## CLI Reference
 
@@ -70,6 +72,42 @@ python -m rusty_rag.cli ask "What problem does Rust solve in this project?"
 | `ask <question>` | Full RAG: retrieve context, call gpt-4o-mini, print answer |
 
 `search` works with no API key (local embeddings). `ask` requires `OPENAI_API_KEY`.
+
+## Configuration
+
+All settings are read from environment variables or a `.env` file (see `.env.example`).
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OPENAI_API_KEY` | — | Enables OpenAI embeddings + `ask` command; auto-selects `text-embedding-3-small` |
+| `QDRANT_COLLECTION` | `rusty_rag_chunks` | Qdrant collection name |
+| `QDRANT_HOST` | `localhost` | Qdrant hostname |
+| `QDRANT_PORT` | `6333` | Qdrant port |
+| `RETRIEVAL_MIN_SCORE` | `0.50` | Minimum cosine similarity for `ask` (hallucination guard layer 1) |
+
+## Hallucination Guard
+
+The `ask` command uses a two-layer guard to prevent answers invented from training data.
+
+**Layer 1 — Score threshold:** before calling the LLM, the top retrieved chunk's cosine
+similarity is checked against `RETRIEVAL_MIN_SCORE`. If it falls below the threshold, the
+command prints a refusal and exits without an API call. Off-topic queries (e.g. "best recipe
+for paella") score ~0.12 — well below the default 0.50 threshold.
+
+**Layer 2 — System prompt:** if the score passes, the LLM is called with a strict system-role
+instruction: "Answer ONLY using the information provided in the context. Do NOT use outside
+knowledge or training data." The system role is far more effective for grounding than a
+user-message prefix.
+
+## Embedding Models
+
+| Model | Dims | API key | Notes |
+|---|---:|---|---|
+| `sentence-transformers/all-MiniLM-L6-v2` | 384 | None | Default; downloaded on first use (~90 MB) |
+| `text-embedding-3-small` | 1536 | `OPENAI_API_KEY` | Auto-selected when key is present |
+
+Setting `OPENAI_API_KEY` causes `AppConfig` to switch models automatically. A collection
+created with one model is incompatible with the other (different vector dimensions).
 
 ## Benchmark
 
@@ -123,20 +161,18 @@ documents are short. `python_tiktoken` processes 0.01 MB in 0.006 s (1.68 MB/s) 
 `rust_batch` takes 0.40 s (0.025 MB/s). For production use, batch all documents in a single
 call to `chunk_documents_parallel` rather than calling `chunk_text` per document.
 
-## Embedding Models
-
-| Model | Dims | API key | Notes |
-|---|---:|---|---|
-| `sentence-transformers/all-MiniLM-L6-v2` | 384 | None | Default; downloaded on first use (~90 MB) |
-| `text-embedding-3-small` | 1536 | `OPENAI_API_KEY` | Auto-selected when key is present |
-
-Setting `OPENAI_API_KEY` causes `AppConfig` to switch models automatically. A collection
-created with one model is incompatible with the other (different vector dimensions).
-
 ## Real Corpus Demo
 
-Ingests ~30 Wikipedia articles (ML, Rust, Python, NLP, vector search topics) into Qdrant
-using OpenAI embeddings, then answers 7 pre-built questions via gpt-4o-mini.
+Ingests ~30 Wikipedia articles (ML, Rust, Python, NLP, vector search topics) and four project
+documentation files into Qdrant using OpenAI embeddings, then answers questions via gpt-4o-mini.
+
+The demo runs three sections to exercise the full pipeline:
+
+1. **Wikipedia Q&A** — general questions answered from the Wikipedia corpus
+2. **Project docs Q&A** — project-specific questions answered from `data/docs/`
+   (project overview, Rust API reference, hallucination guard explainer, configuration reference)
+3. **Hallucination guard** — off-topic questions that are blocked by the score threshold
+   before reaching the LLM
 
 **Prerequisites:** Docker Qdrant running + `OPENAI_API_KEY` in `.env`.
 
@@ -150,68 +186,59 @@ python scripts/demo.py                 # ingest on first run, then Q&A
 The corpus articles are committed in `data/corpus/` — `fetch_corpus.py` is only needed
 if you want to re-download or extend the corpus.
 
+Run the FAQ benchmark to get a graded pass/fail report across 13 questions:
+
+```bash
+python benchmarks/eval_faq.py          # 13/13 expected; uses top_k=10 for coverage testing
+python benchmarks/eval_faq.py --verbose  # print full LLM answers
+```
+
 ### Sample Output
 
 ```
-Collection : rusty_rag_corpus
-Embedding  : text-embedding-3-small (1536d)
-Qdrant     : localhost:6333
+Collection   : rusty_rag_corpus
+Embedding    : text-embedding-3-small (1536d)
+Qdrant       : localhost:6333
+Min score    : 0.4
 
-Ingesting /mnt/c/git/rusty-rag-chunker/data/corpus into 'rusty_rag_corpus'...
-Ingested 235 chunks.
+######################################################################
+# Wikipedia Corpus — should answer
+######################################################################
 
-======================================================================
+──────────────────────────────────────────────────────────────────────
 Q1: What is retrieval-augmented generation and how does it work?
+[ANSWERED] top_score=0.6695  sources=retrieval_augmented_generation.txt, large_language_model.txt
 
-Sources: large_language_model.txt, retrieval_augmented_generation.txt, information_retrieval.txt
-
-Answer:
-Retrieval-augmented generation (RAG) is a technique that enhances large language models
-(LLMs) by enabling them to retrieve and incorporate external information into their
-responses, allowing access to up-to-date and domain-specific data beyond training.
-
-When a user submits a query, a document retriever finds the most relevant documents from
-a vector database by comparing embeddings. Those documents are combined with the original
-query to augment the prompt, and the LLM generates an answer grounded in the retrieved
+Retrieval-augmented generation (RAG) is a technique that enhances large language
+models by enabling them to retrieve and incorporate external information into their
+responses. When a query arrives, a retriever finds the most relevant documents from
+a vector store by comparing embeddings; those documents are combined with the query
+to augment the prompt, and the LLM generates an answer grounded in the retrieved
 context rather than relying solely on its parametric memory.
 
-The key benefit is reduced hallucination and improved accuracy on queries that require
-current or specialized information, without the cost of retraining the model.
+######################################################################
+# Project Docs — should answer
+######################################################################
 
-======================================================================
-Q3: What makes Rust's memory safety model different from garbage collection?
+──────────────────────────────────────────────────────────────────────
+Q2: Explain how Rust is used with Python in this project.
+[ANSWERED] top_score=0.5733  sources=project_overview.md, rust_extension_api.md
 
-Sources: memory_safety.txt, rust_programming_language.txt
+The chunking engine is written in Rust and exposed to Python via PyO3 and Maturin.
+The Python layer handles document loading, embedding, vector storage in Qdrant,
+retrieval, and LLM calls. Rust is used specifically to chunk text by actual BPE
+token count using tiktoken-rs, which is the same tokenizer as GPT-4. Rust also
+provides Rayon-based parallelism for batch processing, releasing the Python GIL
+for the duration of the chunking work.
 
-Answer:
-Rust enforces memory safety at compile time through ownership rules and a borrow checker,
-rather than at runtime via a garbage collector. Key differences:
+######################################################################
+# Out of Scope — should be blocked
+######################################################################
 
-- No runtime overhead: no GC pauses, making Rust suitable for performance-critical code.
-- RAII: resources are released deterministically when they go out of scope.
-- Compile-time lifetime checks: the compiler ensures no dangling references or
-  use-after-free errors reach runtime.
-- Optional reference counting (Rc/Arc) for shared ownership when needed, without making
-  it the default.
-
-Garbage-collected languages (Java, Python, Go) trade these performance guarantees for
-developer convenience; Rust achieves safety without that trade-off.
-
-======================================================================
-Q7: How does a foreign function interface allow Rust code to be called from Python?
-
-Sources: foreign_function_interface.txt, rust_programming_language.txt
-
-Answer:
-An FFI bridges Rust and Python by compiling Rust code into a shared library (.so / .dll)
-that Python can load at runtime. The Rust function must use the C calling convention
-(extern "C", #[no_mangle]) so the symbol is stable and discoverable. Python then calls
-it via ctypes, cffi, or a higher-level binding library.
-
-PyO3 (used in this project) takes this further: it generates the FFI glue automatically
-from annotated Rust functions (#[pyfunction], #[pymodule]), releasing developers from
-manual type mapping and memory management at the boundary. The result is a native Python
-extension (.pyd / .so) that imports and behaves like any Python module.
+──────────────────────────────────────────────────────────────────────
+Q1: What is the best recipe for making paella?
+[BLOCKED]  top_score=0.1450  threshold=0.4
+I don't have information about this in the knowledge base.
 ```
 
 ## Running Tests

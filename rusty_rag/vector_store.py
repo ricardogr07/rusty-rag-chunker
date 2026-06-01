@@ -4,7 +4,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
+from qdrant_client.models import Distance, PointStruct, ScoredPoint, VectorParams
 
 if TYPE_CHECKING:
     from rusty_rag.config import AppConfig
@@ -41,7 +41,7 @@ def upsert_chunks(
     client.upsert(collection_name=config.collection_name, points=points)
 
 
-def search(client: QdrantClient, query_vector: list[float], config: AppConfig):
+def search(client: QdrantClient, query_vector: list[float], config: AppConfig) -> list[ScoredPoint]:
     return client.query_points(
         collection_name=config.collection_name,
         query=query_vector,

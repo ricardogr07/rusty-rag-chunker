@@ -7,7 +7,7 @@ whether the system's behaviour matches the expected outcome:
   expected=blocked → the system must return the "not in knowledge base" sentinel
 
 Usage:
-    python benchmarks/eval_faq.py [--faq PATH] [--verbose]
+    python benchmarks/eval_faq.py [--faq PATH] [--top-k N] [--verbose]
 """
 from __future__ import annotations
 
@@ -15,7 +15,6 @@ import argparse
 import json
 import os
 import sys
-import time
 from pathlib import Path
 
 # Allow running from the project root without installing the package.
@@ -25,7 +24,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_NOT_IN_KB = "I don't have information about this in the knowledge base."
 _BLOCKED_MARKER = "I don't have information about this in the knowledge base."
 
 
@@ -98,10 +96,7 @@ def main() -> None:
         response, top_score = _run_question(question, config, client)
         is_blocked = response.startswith(_BLOCKED_MARKER)
 
-        if expected == "answer":
-            passed = not is_blocked
-        else:
-            passed = is_blocked
+        passed = (not is_blocked) if expected == "answer" else is_blocked
 
         status = "PASS" if passed else "FAIL"
         print(f"  score={top_score:.4f}  {status}  ({'blocked' if is_blocked else 'answered'})")
@@ -125,8 +120,6 @@ def main() -> None:
             }
         )
 
-        time.sleep(0.5)
-
     print("\n" + "=" * 72)
     print("Results by category:")
     total_pass = total_fail = 0
@@ -136,8 +129,9 @@ def main() -> None:
         total_fail += f
         print(f"  {cat:<25} {p}/{t} passed")
 
-    overall = total_pass / (total_pass + total_fail) * 100
-    print(f"\nOverall: {total_pass}/{total_pass + total_fail} passed ({overall:.0f}%)")
+    total = total_pass + total_fail
+    overall = total_pass / total * 100 if total > 0 else 0.0
+    print(f"\nOverall: {total_pass}/{total} passed ({overall:.0f}%)")
 
     if total_fail:
         sys.exit(1)
