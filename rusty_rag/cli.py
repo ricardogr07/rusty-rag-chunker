@@ -97,6 +97,15 @@ def ask(question: str, top_k: int = typer.Option(5, help="Number of chunks to re
 
     query_vector = embed_texts([question], config)[0]
     chunks = retrieve(client, query_vector, config)
+
+    if not chunks or chunks[0]["score"] < config.retrieval_min_score:
+        best = chunks[0]["score"] if chunks else 0.0
+        typer.echo(
+            f"I don't have information about this in the knowledge base.\n"
+            f"(Best match score: {best:.3f}, threshold: {config.retrieval_min_score})"
+        )
+        return
+
     prompt = build_context_prompt(question, chunks)
     answer = ask_llm(prompt, config)
     typer.echo(answer)

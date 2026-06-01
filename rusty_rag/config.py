@@ -17,6 +17,7 @@ class AppConfig:
     chunk_overlap_tokens: int = 100
     tokenizer_encoding: str = "cl100k_base"
     retrieval_top_k: int = 5
+    retrieval_min_score: float = 0.50
 
     def __post_init__(self) -> None:
         if os.getenv("OPENAI_API_KEY"):
